@@ -220,25 +220,27 @@ def main():
     # Prepare the API service
     credentials = load_oauth2_credentials(args.secrets_file)
     service = create_search_console_client(credentials)
-
+    devicetype = ''.join(args.devices)
+    countrytype = ''.join(args.countries)
     start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
     end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
+    exportmonth = end_date.strftime("%B")
 
-    for day in date_range(start_date, end_date):
-        output_file = os.path.join(
-            args.output_location,
-            "{}_{}.csv".format(args.url_type, day.strftime("%Y%m%d"))
+    output_file = os.path.join(
+        args.output_location,
+        exportmonth + "-" + devicetype + "-" + countrytype + ".csv".format(args.url_type)
         )
-        day = day.strftime("%Y-%m-%d")
-        output_rows = []
+       # day = day.strftime("%Y-%m-%d")
+    output_rows = []
 
-        for filter_set in generate_filters(page=pages, device=args.devices, country=args.countries):
+    for filter_set in generate_filters(page=pages, device=args.devices, country=args.countries):
 
             request = {
-                'startDate' : day,
-                'endDate' : day,
-                'dimensions' : ['query'],
+                'startDate' : args.start_date,
+                'endDate' : args.end_date,
+                'dimensions' : ['page','query'],
                 'rowLimit' : args.max_rows_per_day,
+                'searchType': 'web',
                 'dimensionFilterGroups' : [
                     {
                         "groupType" : "and",
@@ -249,7 +251,7 @@ def main():
 
             response = execute_request(service, args.property_uri, request)
 
-            if response is None:
+            if response is None:    
                 logging.error("Request failed %s", json.dumps(request, indent=2))
                 continue
 
@@ -258,23 +260,26 @@ def main():
                 if pages:
                     filters = [pages[0], 'worldwide', 'all_devices', args.url_type]
                 else:
-                    filters = ['gsc_property', 'worldwide', 'all_devices', args.url_type]
+                    filters = [args.property_uri, 'worldwide', 'all_devices', args.url_type]
 
                 filter_mapping = {'page': 0, 'country': 1, 'device': 2}
                 for _filter in filter_set:
                     filters[filter_mapping[_filter['dimension']]] = _filter['expression']
-
+               
+                #write the information - note that we seperate the key of url[0] and query[1]
                 for row in response['rows']:
                     keys = ','.join(row['keys'])
-                    output_row = [keys, row['clicks'], row['impressions'], row['ctr'], row['position']]
+                    output_row = [keys.split(",")[0],keys.split(",")[1], row['clicks'], row['impressions'], row['ctr'], row['position']]
                     output_row.extend(filters)
                     output_rows.append(output_row)
 
-        with open(output_file, 'w', newline="", encoding="utf-8-sig") as file_handle:
+    with open(output_file, 'w', newline="", encoding="utf-8-sig") as file_handle:
             csvwriter = csv.writer(file_handle)
+             #headers
+            csvwriter.writerow(["URL", "Query", "Clicks", "Impressions", "CTR", "Pososition", "Propery", "Location", "Device"])
             csvwriter.writerows(output_rows)
 
-        logging.info("Query for %s complete", day)
+    #logging.info("Query for %s complete", day)
 
 
 if __name__ == '__main__':
