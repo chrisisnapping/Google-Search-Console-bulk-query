@@ -276,7 +276,7 @@ def main():
     with open(output_file, 'w', newline="", encoding="utf-8-sig") as file_handle:
             csvwriter = csv.writer(file_handle)
              #headers
-            csvwriter.writerow(["URL", "Query", "Clicks", "Impressions", "CTR", "Position", "Propery", "Location", "Device"])
+            csvwriter.writerow(["URL", "Query", "Clicks", "Impressions", "CTR", "Position", "Property", "Location", "Device"])
             csvwriter.writerows(output_rows)
 
     #logging.info("Query for %s complete", day)
