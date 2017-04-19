@@ -269,7 +269,7 @@ def main():
                 #write the information - note that we seperate the key of url[0] and query[1]
                 for row in response['rows']:
                     keys = ','.join(row['keys'])
-                    output_row = [keys.split(",")[0],keys.split(",")[1], row['clicks'], row['impressions'], row['ctr'], row['position']]
+                    output_row = [keys.split(",")[0],keys.split(",")[1], row['clicks'], row['impressions'], "{0:.2f}%".format(row['ctr']*100), row['position']]
                     output_row.extend(filters)
                     output_rows.append(output_row)
 
